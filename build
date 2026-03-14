@@ -54,5 +54,6 @@ cd "${KERNEL_SRC}" || exit 1
 # General syntax
 patch -p1 < ${WORK}/${KERNEL}/droidspaces/02.fix_restore_cgroup_file_prefix_handling.patch
 make exynos9810-star2lte_defconfig droidspaces.config
+make mrproper
 make_fun "${KERNEL_DEFCONFIG}"
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
