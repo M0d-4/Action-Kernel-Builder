@@ -51,5 +51,9 @@ cd "${KERNEL_SRC}" || exit 1
 # curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
 # Start Compiling Kernel
+# General syntax
+patch -p1 < ${WORK}/${KERNEL}/droidspaces/01.fix_kernel_panic_in_xt_qtaguid.patch
+patch -p1 < ${WORK}/${KERNEL}/droidspaces/02.fix_restore cgroup file prefix handling .patch
+make [BUILD_OPTIONS] exynos9810-star2lte_defconfig droidspaces.config
 make_fun "${KERNEL_DEFCONFIG}"
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
