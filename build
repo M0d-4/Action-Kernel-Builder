@@ -3,12 +3,12 @@
 set -e -x
 
 # Kernel Source
-KERNEL_SOURCE="https://github.com/Mod4-Da-GOAT/android_kernel_samsung_exynos9810"
-KERNEL_BRANCH="android-4.11-b-wip"
-KERNEL_DEFCONFIG="exynos9810-star2lte_defconfig"
+KERNEL_SOURCE="https://github.com/Mod4-Da-GOAT/Nethunter_kernel_samsung_a23"
+KERNEL_BRANCH="stock-14"
+KERNEL_DEFCONFIG="a23_eur_open_defconfig"
 
 # Prebuilt Clang Toolchain (AOSP)
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
+CLANG_URL="https://android.googlesource.com/platform//prebuilts/clang/host/linux-x86/+archive/3857008389202edac32d57008bb8c99d2c957f9d/clang-r383902.tar.gz"
 
 # Prebuilt GCC Utilities (AOSP)
 GCC_x64="https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9"
@@ -52,8 +52,7 @@ cd "${KERNEL_SRC}" || exit 1
 
 # Start Compiling Kernel
 # General syntax
-patch -p1 < ${WORK}/${KERNEL}/droidspaces/02.fix_restore_cgroup_file_prefix_handling.patch
-make exynos9810-star2lte_defconfig droidspaces.config
-make mrproper
+patch -p1 < ${WORK}/${KERNEL}/patches/010.Disable-CRC-Checks.patch
+make a23_eur_open_defconfig nethunter_defconfig custom.config
 make_fun "${KERNEL_DEFCONFIG}"
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
