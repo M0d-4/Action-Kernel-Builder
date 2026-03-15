@@ -56,5 +56,6 @@ export ARCH=arm64
 export SUBARCH=arm64
 patch -p1 < ${WORK}/${KERNEL}/patches/010.Disable-CRC-Checks.patch
 make a23_eur_open_defconfig nethunter_defconfig custom.config
+make mrproper
 make_fun "${KERNEL_DEFCONFIG}"
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
