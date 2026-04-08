@@ -54,7 +54,7 @@ cd "${KERNEL_SRC}" || exit 1
 # General syntax
 make mrproper
 make exynos9810-star2lte_defconfig
-cat droidspaces.config >> .config
+cat arch/arm64/configs/droidspaces.config >> .config
 make olddefconfig
 export KCFLAGS=-Wno-error
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log
