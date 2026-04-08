@@ -8,7 +8,7 @@ KERNEL_BRANCH="android-4.11-b-wip"
 KERNEL_DEFCONFIG="exynos9810-star2lte_defconfig"
 
 # Prebuilt Clang Toolchain (AOSP)
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/ee5ad7f5229892ff06b476e5b5a11ca1f39bf3a9/clang-r365631c.tar.gz"
+CLANG_URL="https://filebin.net/d69wapqnibgbdn0p/linux-x86-ee5ad7f5229892ff06b476e5b5a11ca1f39bf3a9-clang-r365631c.tar.gz"
 
 # Prebuilt GCC Utilities (AOSP)
 GCC_x64="https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9"
