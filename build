@@ -51,7 +51,7 @@ cd "${KERNEL_SRC}" || exit 1
 # curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
 # Start Compiling Kernel
-# General syntax
+patch -p1 < ${WORK}/${KERNEL}/patches/009.fix-Werror.patch
 patch -p1 < ${WORK}/${KERNEL}/droidspaces/02.fix_restore_cgroup_file_prefix_handling.patch
 make exynos9810-star2lte_defconfig droidspaces.config
 make mrproper
