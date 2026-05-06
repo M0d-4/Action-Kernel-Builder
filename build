@@ -53,5 +53,6 @@ cd "${KERNEL_SRC}" || exit 1
 # Start Compiling Kernel
 # General syntax
 make exynos9810-star2lte_defconfig ubuntu-chroot.config droidspaces.config droidspaces-additional.config
+make mproper
 make_fun "${KERNEL_DEFCONFIG}"
 make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
