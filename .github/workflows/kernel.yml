@@ -60,12 +60,18 @@ jobs:
           zip -r9 "${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip" \
             ./* -x "dts" -x "dts/*"
 
+      - name: Resolve Artifact Paths
+        id: paths
+        run: |
+          echo "boot=$HOME/work/myKernel/out/arch/arm64/boot" >> $GITHUB_OUTPUT
+          echo "log=$HOME/work/myKernel/build.log" >> $GITHUB_OUTPUT
+
       - name: Release
         uses: ncipollo/release-action@v1.12.0
         with:
           artifacts: |
-            ${{ env.HOME }}/work/myKernel/out/arch/arm64/boot/*.zip
-            ${{ env.HOME }}/work/myKernel/build.log
+            ${{ steps.paths.outputs.boot }}/*.zip
+            ${{ steps.paths.outputs.log }}
           name: "Compiled Kernel for ${{ github.event.inputs.DEVICE_NAME }} - ${{ steps.props.outputs.date }}"
           draft: false
           prerelease: false
