@@ -1,5 +1,6 @@
 name: Build Kernel
-on:
+
+on: 
   workflow_dispatch:
     inputs:
       DEVICE_NAME:
@@ -12,12 +13,12 @@ on:
         default: ''
         type: choice
         options:
-          - t-oss
-          - s-oss
-          - r-oss
-          - q-oss
-          - b-oss
-          - u-oss
+        - t-oss
+        - s-oss
+        - r-oss
+        - q-oss
+        - b-oss
+        - u-oss
 
 permissions:
   contents: write
@@ -26,63 +27,47 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
+    - name: Checkout
+      uses: actions/checkout@main
 
-      - name: Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git ccache automake flex lzop bison gperf \
-            build-essential zip curl zlib1g-dev g++-multilib libxml2-utils \
-            bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools \
-            pngcrush schedtool dpkg-dev liblz4-tool make optipng maven \
-            libssl-dev pwgen libswitch-perl policycoreutils minicom \
-            libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 \
-            lib32ncurses-dev libx11-dev lib32z-dev libgl1-mesa-dev \
-            xsltproc unzip device-tree-compiler python3
+    - name: Packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3 device-tree-compiler
 
-      - name: Start Building Kernel
-        env:
-          DEVICE_NAME: ${{ github.event.inputs.DEVICE_NAME }}
-          ANDROID_VERSION: ${{ github.event.inputs.ANDROID_VERSION }}
-        run: |
-          export KBUILD_BUILD_USER="${{ github.actor }}"
-          export KBUILD_BUILD_HOST="${{ github.event.inputs.DEVICE_NAME }}"
-          ./build
+    - name: Start Building Kernel
+      run: |
+        export KBUILD_BUILD_USER="${{ github.actor }}"
+        export KBUILD_BUILD_HOST="${{ github.event.inputs.DEVICE_NAME }}"
+        ./build
 
-      - name: Set Properties
-        id: props
-        run: echo "date=$(TZ=Asia/Manila date +%Y%m%d-%I%M%p)" >> $GITHUB_OUTPUT
+    - name: Set Properties
+      id: props
+      run: |
+        echo "date=$(TZ=Asia/Manila date +%Y%m%d-%I%M%p)" >> $GITHUB_OUTPUT
 
-      - name: Compressed as Archive
-        run: |
-          cd "$HOME/work/myKernel/out/arch/arm64/boot" || exit 1
-          zip -r9 "${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip" \
-            ./* -x "dts" -x "dts/*"
+    - name: Compressed as Archive
+      run: |
+        cd /home/runner/work/myKernel/out/arch/arm64/boot || exit 1
+        zip -r9 "${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip" ./* -x "dts" -x "dts/*"
 
-      - name: Resolve Artifact Paths
-        id: paths
-        run: |
-          echo "boot=$HOME/work/myKernel/out/arch/arm64/boot" >> $GITHUB_OUTPUT
-          echo "log=$HOME/work/myKernel/build.log" >> $GITHUB_OUTPUT
+    - name: Release
+      uses: ncipollo/release-action@v1.12.0
+      with:
+        artifacts: |
+          /home/runner/work/myKernel/out/arch/arm64/boot/*.zip
+          /home/runner/work/myKernel/build.log
+        name: Compiled Kernel for ${{ github.event.inputs.DEVICE_NAME }} - ${{ steps.props.outputs.date }}
+        draft: false
+        prerelease: false
+        tag: ${{ github.run_id }}-${{ steps.props.outputs.date }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        body: |
+          ## Notes
+            - Extract ${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip, look your newly-compiled kernel inside.
+            - Include building logs.
 
-      - name: Release
-        uses: ncipollo/release-action@v1.12.0
-        with:
-          artifacts: |
-            ${{ steps.paths.outputs.boot }}/*.zip
-            ${{ steps.paths.outputs.log }}
-          name: "Compiled Kernel for ${{ github.event.inputs.DEVICE_NAME }} - ${{ steps.props.outputs.date }}"
-          draft: false
-          prerelease: false
-          tag: "${{ github.run_id }}-${{ steps.props.outputs.date }}"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            ## Notes
-            - Extract `${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip` to find your kernel.
-            - Build log included.
-
-      - name: Link of Release
-        run: |
-          echo "Enjoy your Newly Built Kernel"
-          echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ github.run_id }}-${{ steps.props.outputs.date }}"
+    - name: Link of Release
+      run: |
+        echo "Enjoy your Newly Built Kernel"
+        echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ github.run_id }}-${{ steps.props.outputs.date }}"
