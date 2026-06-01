@@ -1,52 +1,58 @@
 #!/bin/sh
+
 set -e -x
 
+# Kernel Source
 KERNEL_SOURCE="https://github.com/M0d-4/android_kernel_samsung_exynos9810-los"
 KERNEL_BRANCH="lineage-23.2-bpf-test"
 KERNEL_DEFCONFIG="exynos9810-star2lte_defconfig"
 
+# Prebuilt Clang Toolchain (AOSP)
 CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
+
+# Prebuilt GCC Utilities (AOSP)
 GCC_x64="https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9"
 GCC_x32="https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9"
 GCC_BRANCH="master-kernel-build-2021"
 
-WORK="${HOME}/work"
-KERNEL="myKernel"
-KERNEL_SRC="${WORK}/${KERNEL}"
-
+# Setup make Command
 make_fun() {
-    make O=out ARCH=arm64 CC=clang HOSTCC=clang DTC=dtc \
-        CLANG_TRIPLE=aarch64-linux-gnu- \
-        CROSS_COMPILE=aarch64-linux-androidkernel- "$@"
+	make O=out ARCH=arm64 CC=clang HOSTCC=clang DTC=dtc \
+		CLANG_TRIPLE=aarch64-linux-gnu- \
+		CROSS_COMPILE=aarch64-linux-androidkernel- "$@"
 }
 
+# Work Path
+WORK="${HOME}/work"
+
+# Kernel Folder Name
+KERNEL="myKernel"
+
+# Kernel Source Path
+KERNEL_SRC="${WORK}/${KERNEL}"
+
+# Prepare Directory
 mkdir -p "${WORK}"
 cd "${WORK}" || exit 1
 
-if [ ! -d clang ]; then
-    mkdir clang
-    curl -Lsq "${CLANG_URL}" -o clang.tgz
-    tar -xzf clang.tgz -C clang
-fi
+# Cloning all the Necessary files
+if [ ! -d clang ]; then mkdir clang && curl -Lsq "${CLANG_URL}" -o clang.tgz && tar -xzf clang.tgz -C clang; fi
 [ ! -d x64 ] && git clone --depth=1 "${GCC_x64}" -b "${GCC_BRANCH}" ./x64
 [ ! -d x32 ] && git clone --depth=1 "${GCC_x32}" -b "${GCC_BRANCH}" ./x32
 [ ! -d "${KERNEL}" ] && git clone --depth=1 "${KERNEL_SOURCE}" -b "${KERNEL_BRANCH}" "${KERNEL}"
 
-export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
+# Setting Toolchain Path
+PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:/bin"
 
+# Enter Kernel root directory
 cd "${KERNEL_SRC}" || exit 1
 
-# KernelSU (optional)
+# KernelSU - Disable if not building one.
 # curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
-# Clean, configure, merge fragments, build
-make mrproper
+# Start Compiling Kernel
+# General syntax
+make exynos9810-star2lte_defconfig ubuntu-chroot.config droidspaces.config droidspaces-additional.config
+make mproper
 make_fun "${KERNEL_DEFCONFIG}"
-
-# Merge any extra config fragments if they exist
-for cfg in ubuntu-chroot.config droidspaces.config droidspaces-additional.config; do
-    [ -f "${cfg}" ] && ./scripts/kconfig/merge_config.sh -m -O out out/.config "${cfg}"
-done
-make_fun olddefconfig
-
-make_fun -j"$(nproc --all)" 2>&1 | tee build.log
+make_fun -j"$(nproc --all)" 2>&1 | tee build.log 
