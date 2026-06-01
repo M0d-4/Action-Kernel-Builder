@@ -19,6 +19,10 @@ on:
         - q-oss
         - b-oss
         - u-oss
+      BOOT_IMAGE_URL:
+        description: 'Direct URL to your stock boot.img (leave blank to skip boot image repack).'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -46,6 +50,49 @@ jobs:
       run: |
         echo "date=$(TZ=Asia/Manila date +%Y%m%d-%I%M%p)" >> $GITHUB_OUTPUT
 
+    - name: Repack Boot Image
+      if: ${{ github.event.inputs.BOOT_IMAGE_URL != '' }}
+      run: |
+        BOOT_OUT="/home/runner/work/myKernel/out/arch/arm64/boot"
+        BOOT_WORK="${BOOT_OUT}/bootimg_work"
+        KERNEL_IMAGE="${BOOT_OUT}/Image"
+
+        # Verify compiled kernel exists
+        if [ ! -f "${KERNEL_IMAGE}" ]; then
+          echo "ERROR: Compiled kernel image not found at ${KERNEL_IMAGE}"
+          exit 1
+        fi
+
+        # Download magiskboot for unpacking/repacking
+        echo "Downloading magiskboot..."
+        curl -Lsq "https://github.com/j-hc/magiskboot_ndk_on_linux/releases/latest/download/magiskboot" \
+          -o /usr/local/bin/magiskboot
+        chmod +x /usr/local/bin/magiskboot
+
+        # Download stock boot image
+        echo "Downloading stock boot image from ${{ github.event.inputs.BOOT_IMAGE_URL }} ..."
+        mkdir -p "${BOOT_WORK}"
+        curl -L --progress-bar "${{ github.event.inputs.BOOT_IMAGE_URL }}" \
+          -o "${BOOT_WORK}/boot.img"
+
+        # Unpack the boot image
+        echo "Unpacking boot image..."
+        cd "${BOOT_WORK}"
+        magiskboot unpack boot.img
+
+        # Rename compiled kernel from "Image" to "kernel" and replace
+        echo "Replacing kernel..."
+        cp "${KERNEL_IMAGE}" "${BOOT_WORK}/kernel"
+
+        # Repack the boot image with the new kernel
+        echo "Repacking boot image..."
+        magiskboot repack boot.img new-boot.img
+
+        # Move the repacked image to the boot output dir for release
+        cp "${BOOT_WORK}/new-boot.img" "${BOOT_OUT}/${{ github.event.inputs.DEVICE_NAME }}-new-boot.img"
+
+        echo "Boot image repacked successfully: ${BOOT_OUT}/${{ github.event.inputs.DEVICE_NAME }}-new-boot.img"
+
     - name: Compressed as Archive
       run: |
         cd /home/runner/work/myKernel/out/arch/arm64/boot || exit 1
@@ -56,6 +103,7 @@ jobs:
       with:
         artifacts: |
           /home/runner/work/myKernel/out/arch/arm64/boot/*.zip
+          /home/runner/work/myKernel/out/arch/arm64/boot/*-new-boot.img
           /home/runner/work/myKernel/build.log
         name: Compiled Kernel for ${{ github.event.inputs.DEVICE_NAME }} - ${{ steps.props.outputs.date }}
         draft: false
@@ -65,6 +113,7 @@ jobs:
         body: |
           ## Notes
             - Extract ${{ github.event.inputs.DEVICE_NAME }}-${{ steps.props.outputs.date }}.zip, look your newly-compiled kernel inside.
+            - If a BOOT_IMAGE_URL was provided, a repacked `${{ github.event.inputs.DEVICE_NAME }}-new-boot.img` is also attached — flash it directly via fastboot or a custom recovery.
             - Include building logs.
 
     - name: Link of Release
